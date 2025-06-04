@@ -150,7 +150,8 @@ public class LongPollingServlet extends HttpServlet {
         // the traffic.
         //resp.setBufferSize(0);
         req.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
-        final AsyncContext asyncContext = req.startAsync();
+        // Cast to javax.servlet.http.HttpServletRequest to ensure we're working with Servlet 3.0+ API
+        final AsyncContext asyncContext = req.startAsync(req, resp);
         asyncContext.setTimeout(pollingTimeout);
         asyncContext.addListener(new AsyncListener() {
             @Override
