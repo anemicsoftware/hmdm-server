@@ -34,6 +34,7 @@ import com.hmdm.rest.json.LookupItem;
 import com.hmdm.rest.json.PaginatedData;
 import com.hmdm.security.SecurityContext;
 import com.hmdm.security.SecurityException;
+import com.hmdm.util.CryptoUtil;
 import com.hmdm.util.PasswordUtil;
 import org.mybatis.guice.transactional.Transactional;
 import org.slf4j.Logger;
@@ -200,8 +201,11 @@ public class UnsecureDAO {
         }
     }
 
+    @Transactional
     public List<Application> getPlainConfigurationApplications(Integer customerId, Integer id) {
-        return this.configurationMapper.getPlainConfigurationApplications(customerId, id);
+        String tblName = "ca" + CryptoUtil.randomHexString(8);
+        configurationMapper.createTempConfigAppTable(tblName, id);
+        return this.configurationMapper.getPlainConfigurationApplications(customerId, tblName, id);
     }
 
     @Transactional
@@ -567,6 +571,8 @@ public class UnsecureDAO {
 
     public Device createNewDeviceOnDemand(String deviceId, DeviceCreateOptions createOptions) {
         int customerId = DEFAULT_CUSTOMER_ID;
+        int deviceLimit = 0;
+        int deviceCount = 0;
         if (!isSingleCustomer()) {
             if (createOptions.getCustomer() == null) {
                 logger.warn("Customer is not set, device not created");
@@ -579,7 +585,18 @@ public class UnsecureDAO {
                 logger.warn("Failed to get a customer by name '" + createOptions.getCustomer() + "', device not created");
                 return null;
             }
+            deviceLimit = customer.getDeviceLimit();
+            Long deviceCountLong = deviceMapper.countAllDevicesForCustomer(customerId);
+            if (deviceCountLong != null) {
+                deviceCount = deviceCountLong.intValue();
+            }
         }
+
+        if (deviceLimit != 0 && deviceCount >= deviceLimit) {
+            logger.warn("New device " + deviceId + " not created by customer " + customerId + ": license limit");
+            return null;
+        }
+
         Settings settings = getSettings(customerId);
         Device newDevice = new Device();
         newDevice.setCustomerId(customerId);

@@ -34,6 +34,11 @@
     color: #a0a0a0;
 }
 
+.list-desc {
+    color: #888;
+    font-size: 13px;
+}
+
 .field-hint {
     color: #888;
     font-size: 13px;
@@ -873,6 +878,10 @@ td.app-desc span {
 .custom-multi-select .dropdown-menu-form span {
     min-width: 20px;
     display: inline-block;
+}
+
+.limited-multi-select .dropdown-menu-form {
+    height: 300px !important;
 }
 
 .tags-wrapper .tags .tag-item {
